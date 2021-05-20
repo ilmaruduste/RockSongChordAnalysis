@@ -8,9 +8,9 @@ The dataset was KISW (Rock of Seattle's) Top 750 Classic Rock songs.
 
 **Process flow:**
 <ol>
-<li>Convert songs from .mp3 to .wav (*mp3_to_wav.py*)</li>
+<li>Convert songs from .mp3 to .wav (<i>mp3_to_wav.py</i>)</li>
 <li>Spliced each song from 30s to 120s (for a total duration of 90s)
- (*mp3_to_wav.py*)</li>
+ (<i>mp3_to_wav.py</i>)</li>
 <li>Ran Automatic Chord Recognition (ACR) on each spliced song (<i>ChordRecognitionMIDITrainedExtractor</i>).</li>
 <li>Transformed the ACR output files from .lab format to a unified .csv file (<i>labs_to_pandas.py</i>)</li>
  <li>Gathered metadata from original .mp3 files (<i>metadata_to_csv.py</i>).</li>
