@@ -24,7 +24,7 @@ The presentation of this project is in <i>MIR Project Uduste.pdf</i>.
 
 <b>The final analysis in plots:</b>
 ![Rock Bands and their Songs](plots/rock_band_songs.png)
-![Unique Chord Average vs Year](plots/unique_chords_year.png)
+![Unique Chord Average vs Year](plots/unique_chords_year_plot.png)
 ![Songs with few chords](plots/few_chords.png)
 ![Songs with many chords](plots/many_chords.png)
 ![Chord Usage with Circle of Fifths](plots/radial_plot.png)
