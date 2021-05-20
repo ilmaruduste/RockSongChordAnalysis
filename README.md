@@ -22,5 +22,11 @@ The presentation of this project is in <i>MIR Project Uduste.pdf</i>.
 
 **ChordRecognitionMIDITrainedExtractor** is blatantly forked from here: https://github.com/Xiao-Ming/ChordRecognitionMIDITrainedExtractor
 
-Some plots:
+<b>The final analysis in plots:</b>
 ![Rock Bands and their Songs](plots/rock_band_songs.png)
+![Unique Chord Average vs Year](plots/unique_chords_year.png)
+![Songs with few chords](plots/few_chords.png)
+![Songs with many chords](plots/many_chords.png)
+![Chord Usage with Circle of Fifths](plots/radial_plot.png)
+![Chord Usage vs Year Heatmap](plots/chord_year_heatmap.png)
+![Chord Mode Usage vs Year](plots/chord_mode_year.png)
