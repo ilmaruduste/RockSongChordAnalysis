@@ -1,0 +1,467 @@
+---
+title: "MIR Project - 750 Rock songs chord analysis"
+output: html_notebook
+---
+
+Import libraries
+```{r}
+library(ggplot2)
+library(dplyr)
+library(modeest)
+library(extrafont)
+library(tidyr)
+```
+
+
+
+Read in the chord data for 750 songs
+```{r}
+complete_df <- read.csv("processed_data/750_songs_complete_chords.csv", sep = ';')
+metadata_df <- read.csv("processed_data/metadata_df_total.csv", sep = ';')
+metadata_df$name_title <- paste(metadata_df$artist, "-", metadata_df$title)
+metadata_df$song_decade <- paste(substr(metadata_df$date, 3, 3), "0s", sep = "")
+```
+
+Join dataframes
+```{r}
+# Left join
+joined_df <- merge(x = complete_df, y = metadata_df, by.x = "song_name", by.y = 'filename', all.x = TRUE)
+
+joined_df$chord_duration <- joined_df$end_timestamp - joined_df$start_timestamp
+joined_df$chord_simplified <- substr(joined_df$chord, 1, 2)
+```
+
+Some general description for how many songs a band has
+```{r}
+table(metadata_df$artist)
+
+# metadata_df %>% 
+#   count(artist) %>% 
+  
+bands_by_songs_and_year <- metadata_df %>% 
+  count(artist) %>% 
+  filter(n > 10) 
+
+bands_by_songs_and_year$popular_decade <- c("80s", "80s", "90s", "80s", "60s", "70s", "90s", "70s", "90s", "70s", "60s", "80s", "80s", "90s", "60s", "70s", "80s", "70s")
+
+ggplot(data = bands_by_songs_and_year, aes(y = reorder(artist, n), x = n, fill = popular_decade)) + 
+  geom_bar(stat = 'identity', color = "white") +
+  xlab("Count of Songs by Artist in the Top 750 Classic Rock Songs List") + 
+  labs(fill = "The Artist's Most Popular Decade") +
+  # coord_flip() +
+  ggtitle("Led Zeppelin is the 'best' Rock Band of all-time", 
+          subtitle = "According to the Top 750 Classic Rock songs list by KISW") +
+  geom_text(aes(label = n), nudge_x = -1.5, size = 3, color = "white") +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.x = element_text(hjust = 0),
+        plot.title = element_text(hjust = 0),
+        legend.position = c(0.7, 0.4)
+        )
+
+
+ggsave("rock_band_songs.png", width = 8, height = 6)
+```
+
+
+```{r}
+sapply(metadata_df, class)
+```
+
+Nr of unique chords per song
+```{r}
+unique_chords_df <- joined_df %>% 
+  group_by(song_name) %>% 
+  summarize(unique_chord_cnt = n_distinct(chord)) %>% 
+  merge(y = metadata_df, by.x = "song_name", by.y = "filename", all.x = TRUE)
+
+few_chord_song_titles <- c(
+  "Baba O'riley",
+  "Thunderstruck",
+  # "Wish You Were Here",
+  "Paranoid",
+  "I Still Haven't Found What I'm Looking For",
+  "Let There Be Rock",
+  "Cocaine",
+  "Even Flow",
+  "Gimme All Your Lovin",
+  "(I Can't Get No) Satisfaction",
+  "Nothing Else Matters",
+  "Everlong"
+       )
+
+
+# Cocaine
+# Free Bird
+# (I Can't Get No) Satisfaction
+# Even Flow
+# Gimme All Your Lovin
+# Nothing Else Matters
+# Everlong
+
+# Stairway To Heaven
+# Eruption
+# Bohemian Rhapsody
+# Back In Black
+# We Are The Champions
+# All Along The Watchtower
+# Heartbreaker
+# Little Wing
+# Killer Queen
+# Somebody To Love
+# Fade To Black
+# Logical Song
+
+unique_chords_df %>% 
+  filter(title %in% few_chord_song_titles) %>% 
+  ggplot(aes(x = unique_chord_cnt, y = reorder(name_title, -unique_chord_cnt), fill = song_decade)) +
+  geom_bar(stat = 'identity') + 
+  theme_minimal() +
+  scale_fill_discrete(labels = c("60s", "70s", "80s", "90s")) + 
+  labs(x = " Number of Unique Chords in Song", fill = "Song Decade") + 
+  geom_text(aes(label = unique_chord_cnt), nudge_x = -2, size = 4, color = "white") +
+  ggtitle("A rock musician plays 3 chords for 1000 people,\nwhile a jazz musician plays 1000 chords for 3 people", 
+          subtitle = "Number of Unique Chords in Popular Songs with few unique chords") + 
+  xlim(c(0,10)) +
+  theme(axis.title.y = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      axis.text.x = element_blank(),
+      plot.caption = element_text(hjust = 0),
+      axis.title.x = element_text(hjust = 0),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      # plot.title = element_text(hjust = -1),
+      # legend.position = c(0.95, 0.8),
+      axis.text.y = element_text(size = 9)
+      )
+
+ggsave("few_chords.png", width = 5.25, height = 6)
+```
+
+
+```{r}
+
+
+unique_chords_df %>% 
+  filter(unique_chord_cnt < 7)
+
+# Baba O'riley
+# Thunderstruck
+# 309 Wish You Were Here
+# Paranoid
+# I Still Haven't Found What I'm Looking For
+# Let There Be Rock
+
+
+# 6 chords
+# Cocaine
+# Free Bird
+# (I Can't Get No) Satisfaction
+# Even Flow
+# Gimme All Your Lovin
+# Nothing Else Matters
+# Everlong
+
+# With many unique chords
+unique_chords_df %>% 
+  filter(unique_chord_cnt > 15)
+
+# Stairway To Heaven
+# Eruption
+# Bohemian Rhapsody
+# Back In Black
+# We Are The Champions
+# All Along The Watchtower
+# Heartbreaker
+# Little Wing
+# Killer Queen
+# Somebody To Love
+# Fade To Black
+# Logical Song
+
+
+
+many_chord_song_titles <- c(
+  "Stairway To Heaven",
+  "Eruption",
+  "Bohemian Rhapsody",
+  "Back In Black",
+  "We Are The Champions",
+  "All Along The Watchtower",
+  "Heartbreaker",
+  "Little Wing",
+  "Killer Queen",
+  "Somebody To Love",
+  "Fade To Black",
+  "Logical Song"
+)
+
+
+unique_chords_df %>% 
+  filter(title %in% many_chord_song_titles) %>% 
+  ggplot(aes(x = unique_chord_cnt, y = reorder(name_title, unique_chord_cnt), fill = song_decade)) +
+  geom_bar(stat = 'identity') + 
+  theme_minimal() +
+  scale_fill_discrete(labels = c("60s", "70s", "80s", "90s")) + 
+  labs(x = " Number of Unique Chords in Song", fill = "Song Decade") + 
+  geom_text(aes(label = unique_chord_cnt), nudge_x = -3, size = 4, color = "white") +
+  ggtitle("Complicated songs also get a Whole Lotta Love", 
+          subtitle = "Number of Unique Chords in Popular Songs with few unique chords") + 
+  theme(axis.title.y = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      axis.text.x = element_blank(),
+      # plot.title = element_text(hjust = -1),
+      plot.caption = element_text(hjust = -1),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      axis.title.x = element_text(hjust = 0),
+      # legend.position = c(0.95, 0.8),
+      axis.text.y = element_text(size = 10) 
+      )
+
+
+ggsave("many_chords.png", width = 5.25, height = 6)
+```
+
+Linegraph for mean number of unique chords per year
+```{r}
+# https://www.rockmusictimeline.com/1985
+
+events_labels <- data.frame(
+  date = c(1982, 1985, 1992, 1999, 1970, 1972),
+  avg_unique_chord_cnt_per_year = c(14.3, 6, 13, 6.5, 14.5, 7),
+  label = c("1981 - MTV is established", 
+            "1985 - Live Aid concert", 
+            "1992 - Nirvana's\n'Smells Like Teen Spirit'", 
+            "1999 - Napster is launched",
+            "1967 - Beatle's Sgt Pepper's\n and Jimi Hendrix Experience",
+            "1972 - Rise of Glam Rock")
+)
+
+unique_chords_df %>% 
+  group_by(date) %>% 
+  summarize(avg_unique_chord_cnt_per_year = mean(unique_chord_cnt), decade = paste(substr(date, 3,3), "0s", sep = "")) %>% 
+  ggplot(aes(x = date, y = avg_unique_chord_cnt_per_year)) +
+  geom_line(aes(color = decade), size = 0.5) +
+  geom_point(aes(color = decade) ,size = 1.5) +
+  # geom_area(alpha = 0.3) +
+  theme_minimal() +
+  ylim(c(0,18)) +
+  xlim(c(1967,2005)) +
+  ylab("Average Number of Chords in Songs") +
+  xlab("Year") + 
+  labs(color = "Decade") +
+  # geom_text(data = events_labels, aes(label = label), nudge_y = 1.5, size = 3) +
+  geom_label(data = events_labels, aes(label = label), nudge_y = 0.5, size = 3) +
+  scale_color_discrete(breaks = c("60s", "70s", "80s", "90s", "00s")) + 
+  # scale_color_brewer(palette="Greens") +
+  ggtitle("Creativity of Rock Bands Might've Peaked in the 80s", 
+        subtitle = "Average Number of Unique Chords for Songs Made in a Particular Year") + 
+  theme(axis.title.y = element_blank(),
+    # panel.grid.major.x = element_blank(),
+    # panel.grid.minor.x = element_blank(),
+    # panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    # axis.text.x = element_blank(),
+    axis.title.x = element_blank(),
+    plot.title = element_text(hjust = 0),
+    legend.position = c(0.9, 0.86)
+    )
+
+ggsave("unique_chords_year_plot.png", width = 8, height = 6)
+```
+
+
+Barplot with most common chords (by total time)
+With radial coordinates to signify the circle of fifths!
+```{r}
+
+sum(joined_df$chord_duration) # 63336.67
+
+joined_df %>% 
+  group_by(chord_simplified) %>% 
+  summarize(total_chord_length = sum(chord_duration),
+            total_chord_proportion = sum(chord_duration)/63336.67) %>% 
+  filter(chord_simplified != "N") %>% 
+  ggplot(aes(x = factor(chord_simplified, 
+                        level = c("G:", "D:", "A:", "E:", 
+                                  "B:", "Gb", "Db", "Ab", 
+                                  "Eb", "Bb", "F:", "C:")), 
+             y = total_chord_proportion)) +
+  geom_bar(aes(fill = total_chord_proportion), stat = 'identity') +
+  # scale_fill_continuous(type = "viridis") + 
+  # scale_fill_viridis_c(option = "magma") + 
+  scale_fill_gradient(low = "#003f5c",
+                      high = "#ff6361", 
+                      name = "Chord Proportion in\nRock Song Playtime",
+                      labels = scales::percent) + 
+  # scale_colour_brewer(palette = "Set1") +
+  scale_x_discrete(labels = c("G", "D", "A", "E", 
+                              "B", "Gb", "Db", "Ab", 
+                              "Eb", "Bb", "F", "C")) +
+  coord_polar() + 
+  ggtitle('Guitarists Prefer Easier Chords',
+          subtitle = "Time spent using chords in the Circle of Fifths") + 
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+  # panel.grid.major.x = element_blank(),
+  # panel.grid.minor.x = element_blank(),
+  # panel.grid.major.y = element_blank(),
+  panel.grid.minor.y = element_blank(),
+  axis.text.y = element_blank(),
+  axis.title.x = element_blank(),
+  plot.title = element_text(hjust = 0),
+  axis.text.x = element_text(face = "bold", size = 12, vjust = 15) 
+  )
+  
+
+joined_df %>% 
+  group_by(chord) %>% 
+  summarize(total_chord_length = sum(chord_duration)) %>% 
+  filter(total_chord_length > 1000) %>% 
+  ggplot(aes(x = chord, y = total_chord_length)) +
+  geom_bar(stat = 'identity') 
+
+ggsave("radial_plot.png", width = 6, height = 6)
+```
+
+Minor and Major and Neutral
+Lineplot vs Year
+or barplot with fill to 1
+```{r}
+major_chords <- joined_df %>% 
+  filter(grepl("maj", chord)) %>% 
+  group_by(date) %>% 
+  summarize(total_major_length = sum(chord_duration))
+
+minor_chords <- joined_df %>% 
+  filter(grepl("min", chord)) %>% 
+  group_by(date) %>% 
+  summarize(total_minor_length = sum(chord_duration))
+
+all_chords <- joined_df %>% 
+  # filter(grepl("maj", chord)) %>% 
+  group_by(date) %>% 
+  summarize(total_chord_length = sum(chord_duration))
+
+all_chords <- merge(all_chords, major_chords, by = "date", all.x = TRUE)
+all_chords <- merge(all_chords, minor_chords, by = "date", all.x = TRUE)
+
+all_chords$total_neutral_length <- all_chords$total_chord_length - (all_chords$total_major_length + all_chords$total_minor_length)
+
+# all_chords$major_proportion <- all_chords$total_major_length/all_chords$total_chord_length
+# all_chords$minor_proportion <- all_chords$total_minor_length/all_chords$total_chord_length
+# all_chords$neutral_proportion <- all_chords$total_neutral_length/all_chords$total_chord_length
+
+all_chords_tall <- gather(all_chords, key, value, total_neutral_length, total_major_length, total_minor_length)
+
+all_chords_tall %>% 
+  ggplot(aes(x = date, y = value, fill = key)) +
+  geom_bar(position = "fill", stat = "identity") +
+  xlim(c(1968, 2004)) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_continuous(breaks = seq(1968, 2000, 2),
+                   limits = c(1968, 2002)) +
+  scale_fill_manual(name = "Chord Mode", 
+                      labels = c("Major", "Minor", "Neutral"),
+                      values = c("#ffa600", "#ff6361", "#003f5c")) +
+  ggtitle('Rock is Surprisingly Happy',
+        subtitle = "Proportions of Time Spent Using Different Chord Modes") + 
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+  panel.grid.major.x = element_blank(),
+  panel.grid.minor.x = element_blank(),
+  panel.grid.major.y = element_blank(),
+  panel.grid.minor.y = element_blank(),
+  axis.text.y = element_blank(),
+  axis.title.x = element_blank(),
+  axis.text.x = element_text(angle = 90, hjust = 0, vjust = 2, size = 10),
+  )
+
+ggsave("chord_mode_year.png", width = 8, height = 6)
+```
+
+
+
+Heatmap for chords and years
+
+```{r}
+joined_df %>% 
+  group_by(chord_simplified, date) %>% 
+  summarize(total_chord_length = sum(chord_duration),
+            total_chord_proportion = sum(total_chord_length)/sum(total_chord_length)) %>% 
+  filter(chord_simplified != "N") %>% 
+  ggplot(aes(x = date, y = chord_simplified, fill = total_chord_proportion)) +
+  geom_tile() +
+  xlim(c(1968, 2005)) +
+  theme_minimal()
+
+
+chord_length_year <- joined_df %>% 
+  group_by(chord_simplified, date) %>% 
+  summarize(total_chord_length = sum(chord_duration))
+
+year_total_chord_length <- joined_df %>% 
+  group_by(date) %>% 
+  summarize(total_length = sum(chord_duration))
+
+merged_df <- merge(chord_length_year, year_total_chord_length, by = "date")
+merged_df$total_chord_proportion <- merged_df$total_chord_length/merged_df$total_length
+
+merged_df %>% 
+  filter(chord_simplified != "N") %>% 
+  ggplot(aes(x = date, 
+             y = factor(chord_simplified,
+                        levels = c("Ab", "A:", "Bb", "B:",
+                                   "C:", "Db", "D:", "Eb",
+                                   "E:", "F:", "Gb", "G:")), 
+             fill = total_chord_proportion)) +
+  geom_tile(alpha = 1) +
+  # scale_fill_distiller(type = "Greens") +
+  # scale_fill_continuous(type = "viridis") + 
+  scale_fill_gradient2(low = "#003f5c", 
+                        mid = "#bc5090",
+                        high = "#ffa600", 
+                       space = "Lab",
+                       midpoint = 0.35,
+                       name = "Chord Proportion of Total\nRock Songs Playtime ",
+                       labels = scales::percent) + 
+  scale_y_discrete(labels = c(
+                    "Ab", "A", "Bb", "B",
+                    "C", "Db", "D", "Eb",
+                    "E", "F", "Gb", "G"
+    
+            )) +
+  # xlim(c(1968, 2005)) +
+  scale_x_continuous(breaks = seq(1968, 2000, 2),
+                     limits = c(1968, 2002)) +
+  theme_minimal() +
+  ggtitle("E and A are all-time favorites",
+          subtitle = "Prevalence of chords during the Age of Rock") +
+  theme(axis.title.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    axis.title.x = element_blank(),
+    plot.title = element_text(hjust = 0),
+    axis.text.y = element_text(face = "bold", size = 12),
+    axis.text.x = element_text(angle = 90, hjust = 0, vjust = 1.5, size = 10),
+    panel.background = element_rect(fill = "#003f5c")
+  )
+
+ggsave("chord_year_heatmap.png", width = 10, height = 6)
+```
+
+
