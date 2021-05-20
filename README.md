@@ -23,4 +23,4 @@ The presentation of this project is in <i>MIR Project Uduste.pdf</i>.
 **ChordRecognitionMIDITrainedExtractor** is blatantly forked from here: https://github.com/Xiao-Ming/ChordRecognitionMIDITrainedExtractor
 
 Some plots:
-![plots/rock_band_songs.png](Rock Bands and their Songs)
+![Rock Bands and their Songs](plots/rock_band_songs.png)
