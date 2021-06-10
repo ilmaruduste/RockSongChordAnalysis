@@ -326,15 +326,151 @@ joined_df %>%
   )
   
 
-joined_df %>% 
-  group_by(chord) %>% 
-  summarize(total_chord_length = sum(chord_duration)) %>% 
-  filter(total_chord_length > 1000) %>% 
-  ggplot(aes(x = chord, y = total_chord_length)) +
-  geom_bar(stat = 'identity') 
+# joined_df %>% 
+#   group_by(chord) %>% 
+#   summarize(total_chord_length = sum(chord_duration)) %>% 
+#   filter(total_chord_length > 1000) %>% 
+#   ggplot(aes(x = chord, y = total_chord_length)) +
+#   geom_bar(stat = 'identity') 
 
 ggsave("radial_plot.png", width = 6, height = 6)
 ```
+```{r}
+
+artists_vector <- c("Led Zeppelin", "Jimi Hendrix", "AC/DC", "Van Halen", 
+              "Aerosmith", "Pink Floyd", "Metallica", "Pearl Jam",
+             "Def Leppard", "Ozzy Osbourne", "The Who", "Rolling Stones",
+             "Soundgarden", "The Doors", "Alice In Chains"
+             )
+
+bands_chords_type_df <- joined_df %>%
+  filter(artist %in% artists_vector) %>% 
+  group_by(chord_simplified, artist) %>% 
+  summarize(total_chord_length = sum(chord_duration),
+            total_chord_proportion = sum(chord_duration)/63336.67) %>% 
+  filter(chord_simplified != "N") 
+
+band_major_chords <- joined_df %>% 
+  filter(artist %in% artists_vector) %>% 
+  filter(grepl("maj", chord)) %>% 
+  group_by(chord_simplified, artist) %>% 
+  summarize(total_major_length = sum(chord_duration))
+
+band_minor_chords <- joined_df %>% 
+  filter(artist %in% artists_vector) %>% 
+  filter(grepl("min", chord)) %>% 
+  group_by(chord_simplified, artist) %>% 
+  summarize(total_minor_length = sum(chord_duration))
+
+
+bands_chords_type_df <- merge(bands_chords_type_df, band_major_chords, by = c("chord_simplified", "artist"), all.x = TRUE)
+bands_chords_type_df <- merge(bands_chords_type_df, band_minor_chords, by = c("chord_simplified", "artist"), all.x = TRUE)
+
+bands_chords_type_df$total_chord_length_for_band <- ave(bands_chords_type_df$total_chord_length, bands_chords_type_df$artist, FUN = sum)
+
+bands_chords_type_df$total_chord_proportion <- bands_chords_type_df$total_chord_length/bands_chords_type_df$total_chord_length_for_band
+
+bands_chords_type_df$total_neutral_length <- bands_chords_type_df$total_chord_length - bands_chords_type_df$total_major_length - bands_chords_type_df$total_minor_length
+
+bands_chords_type_df$total_major_proportion <- bands_chords_type_df$total_major_length/bands_chords_type_df$total_chord_length_for_band
+
+bands_chords_type_df$total_minor_proportion <- bands_chords_type_df$total_minor_length/bands_chords_type_df$total_chord_length_for_band
+
+bands_chords_type_df$total_neutral_proportion <- bands_chords_type_df$total_neutral_length/bands_chords_type_df$total_chord_length_for_band
+
+
+bands_chords_type_df_tall <- gather(bands_chords_type_df, key, value, total_major_proportion, total_minor_proportion, total_neutral_proportion)
+
+# all_chords_tall <- gather(all_chords, key, value, total_neutral_length, total_major_length, total_minor_length)
+  
+# bands_chords_type_df_tall %>% 
+#   ggplot(aes(x = factor(chord_simplified, 
+#                         level = c("G:", "D:", "A:", "E:", 
+#                                   "B:", "Gb", "Db", "Ab", 
+#                                   "Eb", "Bb", "F:", "C:")), 
+#              y = total_chord_proportion)) +
+#   geom_bar(aes(fill = total_chord_proportion), stat = 'identity') +
+#   # scale_fill_continuous(type = "viridis") + 
+#   # scale_fill_viridis_c(option = "magma") + 
+#   scale_fill_gradient(low = "#003f5c",
+#                       high = "#ff6361", 
+#                       name = "Chord Proportion in\nRock Song Playtime",
+#                       labels = scales::percent) + 
+#   # scale_colour_brewer(palette = "Set1") +
+#   scale_x_discrete(labels = c("G", "D", "A", "E", 
+#                               "B", "Gb", "Db", "Ab", 
+#                               "Eb", "Bb", "F", "C")) +
+#   coord_polar() + 
+#   ggtitle('Guitarists Prefer Easier Chords',
+#           subtitle = "Time spent using chords in the Circle of Fifths") + 
+#   theme_minimal() +
+#   theme(axis.title.y = element_blank(),
+#   # panel.grid.major.x = element_blank(),
+#   # panel.grid.minor.x = element_blank(),
+#   # panel.grid.major.y = element_blank(),
+#   panel.grid.minor.y = element_blank(),
+#   axis.text.y = element_blank(),
+#   axis.title.x = element_blank(),
+#   plot.title = element_text(hjust = 0),
+#   axis.text.x = element_text(face = "bold", size = 12, vjust = 15) 
+#   ) +
+#   facet_wrap(~artist, nrow = 2, ncol = 4)
+#   # facet_grid(~artist, rows = 2, cols = 4, space = "fixed", scales = "fixed")
+
+bands_chords_type_df_tall %>% 
+  ggplot(aes(x = factor(chord_simplified, 
+                        level = c("G:", "D:", "A:", "E:", 
+                                  "B:", "Gb", "Db", "Ab", 
+                                  "Eb", "Bb", "F:", "C:")), 
+             y = value, 
+             fill = key)) +
+  geom_bar(stat = 'identity', position = position_stack(reverse = TRUE))  +
+  scale_fill_manual(name = "Chord Mode", 
+                      labels = c("Major", "Minor", "Neutral"),
+                      values = c("#ffa600", "#ff6361", "#003f5c")) +
+                      # values = c("#003f5c", "#ff6361", "#ffa600")) +
+                      # values = c("#ff6361", "#ffa600", "#003f5c")) +
+  scale_x_discrete(labels = c("G", "D", "A", "E", 
+                              "B", "Gb", "Db", "Ab", 
+                              "Eb", "Bb", "F", "C")) +
+  coord_polar() + 
+  ggtitle('Rock Bands Prefer Chords That Are Easier To Play On Guitar',
+          subtitle = "The playtime of a chord and its mode in proportion to the whole band's playtime") + 
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+  # panel.grid.major.x = element_blank(),
+  # panel.grid.minor.x = element_blank(),
+  # panel.grid.major.y = element_blank(),
+  panel.grid.minor.y = element_blank(),
+  axis.text.y = element_blank(),
+  axis.title.x = element_blank(),
+  plot.title = element_text(hjust = 0, size = 24),
+  plot.subtitle = element_text(hjust = 0, size = 16, margin=margin(0,0,20,0)),
+  axis.text.x = element_text(face = "bold", size = 10, vjust = 15),
+  strip.text = element_text(size = 16), # facet title size
+  panel.spacing = unit(1.5, "lines"), # facet spacing
+  legend.key.size = unit(2, "lines"),
+  legend.title = element_text(size = 24),
+  legend.text = element_text(size = 20),
+  legend.position = c(1.2, 0.9)
+  ) +
+  facet_wrap(~factor(artist, levels = c("Soundgarden", "The Who", "Pink Floyd", "Pearl Jam", "Led Zeppelin",
+                                         "Jimi Hendrix", "Metallica", "Aerosmith", "Def Leppard", "AC/DC",
+                                        "Van Halen", "Alice In Chains", "Ozzy Osbourne", "Rolling Stones", "The Doors")), 
+             nrow = 3, 
+             ncol = 5)
+
+ggsave("bands_circle_of_fifths.png", width = 14, height = 8)
+```
+
+```{r}
+joined_df %>% 
+  group_by(chord_simplified) %>% 
+  summarize(total_chord_length = sum(chord_duration),
+            total_chord_proportion = sum(chord_duration)/63336.67) %>% 
+  filter(chord_simplified != "N")
+```
+
 
 Minor and Major and Neutral
 Lineplot vs Year
@@ -375,7 +511,8 @@ all_chords_tall %>%
                    limits = c(1968, 2002)) +
   scale_fill_manual(name = "Chord Mode", 
                       labels = c("Major", "Minor", "Neutral"),
-                      values = c("#ffa600", "#ff6361", "#003f5c")) +
+                      # values = c("#ffa600", "#ff6361", "#003f5c")) +
+                      values = c("#003f5c", "#ff6361", "#ffa600")) +
   ggtitle('Rock is Surprisingly Happy',
         subtitle = "Proportions of Time Spent Using Different Chord Modes") + 
   theme_minimal() +
